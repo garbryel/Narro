@@ -64,4 +64,6 @@ dependencies {
     // ML Kit
     implementation ("com.google.mlkit:text-recognition:16.0.1")
 
+
+
 }

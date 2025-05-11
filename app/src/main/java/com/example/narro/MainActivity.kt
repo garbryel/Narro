@@ -28,6 +28,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.abs
+import androidx.fragment.app.FragmentManager
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,14 +64,14 @@ class MainActivity : AppCompatActivity() {
             startCamera()
         }
 
-        mainBinding.flipCameraIB.setOnClickListener {
-            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_FRONT){
-                CameraSelector.LENS_FACING_BACK
-            }else{
-                CameraSelector.LENS_FACING_FRONT
-            }
-            bindCameraUserCases()
-        }
+//        mainBinding.flipCameraIB.setOnClickListener {
+//            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_FRONT){
+//                CameraSelector.LENS_FACING_BACK
+//            }else{
+//                CameraSelector.LENS_FACING_FRONT
+//            }
+//            bindCameraUserCases()
+//        }
 
         mainBinding.captureIB.setOnClickListener {
             takePhoto()
@@ -78,7 +80,20 @@ class MainActivity : AppCompatActivity() {
         mainBinding.flashToggleIB.setOnClickListener {
             setFlashIcon(camera)
         }
+
+        showGuide()
+        mainBinding.appInfo.setOnClickListener { showGuide() }
+
+
     }
+
+    private fun showGuide() {
+        if (supportFragmentManager.findFragmentByTag(GuideActivity.TAG) == null) {
+            GuideActivity().show(supportFragmentManager, GuideActivity.TAG)
+        }
+    }
+
+
 
 
     private fun checkMultiplePermission(): Boolean {
@@ -280,17 +295,17 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-//                    val message = "Photo Capture Succeded: ${outputFileResults.savedUri}"
-//                    Toast.makeText(
-//                        this@MainActivity,
-//                        message,
-//                        Toast.LENGTH_LONG
-//                    ).show()
                     val savedUri = outputFileResults.savedUri
+//                    if (savedUri != null) {
+//                        val intent = Intent(this@MainActivity, ReadActivity::class.java).apply {
+//                            putExtra("image_uri", savedUri.toString())
+//                        }
+//                        startActivity(intent)
+//                    }
+
                     if (savedUri != null) {
-                        val intent = Intent(this@MainActivity, ReadActivity::class.java).apply {
-                            putExtra("image_uri", savedUri.toString())
-                        }
+                        val intent = Intent(this@MainActivity, LoadingActivity::class.java)
+                        intent.putExtra("image_uri", savedUri.toString())
                         startActivity(intent)
                     }
                 }

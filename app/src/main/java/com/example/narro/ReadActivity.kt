@@ -21,8 +21,8 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var btnBack: ImageButton
     private var tts: TextToSpeech? = null
     private var isSpeaking = false
-    private var textToRead = "" // Teks hasil OCR
-    private var lastCharIndex = 0 // Posisi karakter terakhir yang dibaca
+    private var textToRead = ""
+    private var lastCharIndex = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,15 +33,16 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         btnReplay = findViewById(R.id.btnReplay)
         btnBack = findViewById(R.id.btnBack)
         resultText = findViewById(R.id.resultText)
+        resultText.movementMethod = android.text.method.ScrollingMovementMethod()
 
         tts = TextToSpeech(this, this)
 
-        // Ambil URI gambar dari intent
         imageUri = intent.getStringExtra("image_uri")?.let { Uri.parse(it) }
+        textToRead = intent.getStringExtra("ocr_text") ?: "" //LoadingActivity
+        resultText.text = textToRead
 
         if (imageUri != null) {
             resultImage.setImageURI(imageUri)
-            processImageForText(imageUri!!)
         }
 
         btnPlay.setOnClickListener { toggleSpeech() }
@@ -54,6 +55,7 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         setupTTSListener()
     }
+
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
