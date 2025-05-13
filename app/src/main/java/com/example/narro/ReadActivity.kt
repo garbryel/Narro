@@ -1,7 +1,10 @@
 package com.example.narro
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.widget.ImageButton
@@ -23,10 +26,13 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var isSpeaking = false
     private var textToRead = ""
     private var lastCharIndex = 0
+    private lateinit var ttsHelper: NotificationActivity
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_baca)
+
+        ttsHelper = NotificationActivity(this)
 
         val resultImage = findViewById<ImageView>(R.id.resultImage)
         btnPlay = findViewById(R.id.btnPlay)
@@ -47,10 +53,18 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         btnPlay.setOnClickListener { toggleSpeech() }
         btnReplay.setOnClickListener { replaySpeech() }
+//        btnBack.setOnClickListener {
+//            Handler(Looper.getMainLooper()).postDelayed({
+//                ttsHelper.speak("kembali ke halaman baca")
+//            }, 2000)
+//            deleteImage()
+//            tts?.stop()
+//            finish()
+//        }
+
         btnBack.setOnClickListener {
             deleteImage()
-            tts?.stop()
-            finish()
+            tts?.speak("kembali ke halaman foto", TextToSpeech.QUEUE_FLUSH, null, "BACK_UTTERANCE")
         }
 
         setupTTSListener()
@@ -62,6 +76,13 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val result = tts?.setLanguage(Locale("id", "ID"))
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 resultText.text = "Bahasa tidak didukung"
+            } else {
+                // Pastikan notifikasi suara dipanggil setelah TTS siap
+                if (textToRead.isEmpty()) {
+                    ttsHelper.speak("tidak ada teks terdeteksi")
+                } else {
+                    ttsHelper.speak("proses selesai, anda berada di halaman baca")
+                }
             }
         }
     }
@@ -75,6 +96,10 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     btnPlay.setImageResource(R.drawable.baseline_play_circle_24)
                     isSpeaking = false
                     lastCharIndex = 0 // Reset setelah selesai
+
+                    if (utteranceId == "BACK_UTTERANCE") {
+                        finish()
+                    }
                 }
             }
 
@@ -84,24 +109,6 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 lastCharIndex = start // Simpan posisi terakhir saat TTS membaca
             }
         })
-    }
-
-    private fun processImageForText(uri: Uri) {
-        try {
-            val image = InputImage.fromFilePath(this, uri)
-            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-
-            recognizer.process(image)
-                .addOnSuccessListener { visionText ->
-                    textToRead = visionText.text
-                    resultText.text = textToRead
-                }
-                .addOnFailureListener { e ->
-                    resultText.text = "OCR Gagal: ${e.message}"
-                }
-        } catch (e: Exception) {
-            resultText.text = "Gagal memproses gambar: ${e.message}"
-        }
     }
 
     private fun toggleSpeech() {
@@ -135,11 +142,14 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
+        ttsHelper.shutdown()
         super.onDestroy()
     }
+
 }
 
 
