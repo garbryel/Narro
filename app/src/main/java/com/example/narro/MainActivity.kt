@@ -1,5 +1,6 @@
 package com.example.narro
 
+import android.app.Activity
 import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.Intent
@@ -29,9 +30,39 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.abs
 import androidx.fragment.app.FragmentManager
+import org.tensorflow.lite.Interpreter
+import android.speech.RecognizerIntent
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.*
+import kotlin.math.min
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Dialog
+import android.os.*
+import android.speech.RecognitionListener
+import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import android.util.Log
+import android.view.*
+import android.widget.*
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var tflite: Interpreter
+    private val labels = listOf("baca", "berhenti", "foto", "halo", "info", "kembali", "ulang")
+    private val SAMPLE_RATE = 16000
+    private val N_MFCC = 13
+    private val MAX_LEN = 930
+    private var speechRecognizer: SpeechRecognizer? = null
+    private var speechIntent: Intent? = null
+    private lateinit var speechDialog: Dialog
+    private lateinit var speechTextView: TextView
+    private lateinit var tts: TextToSpeech
+
 
     private val mainBinding : ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
@@ -41,10 +72,12 @@ class MainActivity : AppCompatActivity() {
     private val multiplePermissionNameList = if (Build.VERSION.SDK_INT >= 33) {
         arrayListOf(
             android.Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
         )
     } else {
         arrayListOf(
             android.Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
             android.Manifest.permission.READ_EXTERNAL_STORAGE
         )
@@ -84,7 +117,204 @@ class MainActivity : AppCompatActivity() {
         showGuide()
         mainBinding.appInfo.setOnClickListener { showGuide() }
 
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts.language = Locale("id", "ID")
+            }
+        }
 
+
+        val fab = findViewById<FloatingActionButton>(R.id.fab_speech)
+//        fab.setOnClickListener {
+//            startSpeechToText()
+//        }
+
+        tflite = Interpreter(loadModelFile("mymodele.tflite"))
+
+        setupSpeechButton()
+
+    }
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupSpeechButton() {
+        val fab = findViewById<FloatingActionButton>(R.id.fab_speech)
+        fab.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        showSpeechDialog()
+                        startListening()
+                    } else {
+                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), multiplePermissionId)
+                        Toast.makeText(this, "Izin mikrofon diperlukan", Toast.LENGTH_SHORT).show()
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    stopListening()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun showSpeechDialog() {
+        speechDialog = Dialog(this)
+        speechDialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        speechDialog.setContentView(R.layout.dialog_speech)
+
+        speechTextView = speechDialog.findViewById(R.id.speechText)
+        speechTextView.text = "Masukkan perintah suara..."
+
+//        tts.speak("Masukkan perintah suara", TextToSpeech.QUEUE_FLUSH, null, null)
+
+        speechDialog.findViewById<Button>(R.id.closeButton).setOnClickListener {
+            speechDialog.dismiss()
+        }
+
+        speechDialog.setCancelable(false)
+        speechDialog.window?.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
+
+        speechDialog.show()
+    }
+
+
+//    private fun startSpeechToText() {
+//        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+//        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+//        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+//        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Masukkan perintah")
+//
+//        try {
+//            startActivityForResult(intent, 100)
+//        } catch (e: Exception) {
+//            Toast.makeText(this, "Speech recognition tidak tersedia", Toast.LENGTH_SHORT).show()
+//        }
+//    }
+//
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//        if (requestCode == 100 && resultCode == Activity.RESULT_OK) {
+//            val results = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+//            val spokenText = results?.get(0) ?: ""
+//            Toast.makeText(this, "Kamu bilang: $spokenText", Toast.LENGTH_SHORT).show()
+//
+//            runModel(spokenText)
+//        }
+//    }
+    private fun startListening() {
+    if (SpeechRecognizer.isRecognitionAvailable(this)) {
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onError(error: Int) {
+                val errorMsg = when (error) {
+                    SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+                    SpeechRecognizer.ERROR_CLIENT -> "Client side error"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
+                    SpeechRecognizer.ERROR_NETWORK -> "Network error"
+                    SpeechRecognizer.ERROR_NO_MATCH -> "No match found"
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognizer busy"
+                    SpeechRecognizer.ERROR_SERVER -> "Server error"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout"
+                    else -> "Unknown error: $error"
+                }
+                speechTextView.text = "Gagal mengenali suara: $errorMsg"
+                Log.e("SpeechRecognizer", "Error: $errorMsg")
+                Handler(Looper.getMainLooper()).postDelayed({
+                    speechDialog.dismiss()
+                }, 1500)
+            }
+
+            override fun onResults(results: Bundle?) {
+                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                val text = matches?.get(0) ?: ""
+                speechTextView.text = text
+                runModel(text)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    speechDialog.dismiss()
+                }, 3000)
+            }
+
+            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+
+        speechIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        speechIntent?.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        speechIntent?.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+        speechRecognizer?.startListening(speechIntent)
+    } else {
+        Toast.makeText(this, "Speech recognition not available on this device", Toast.LENGTH_LONG).show()
+        speechDialog.dismiss()
+    }
+}
+
+    private fun stopListening() {
+        speechRecognizer?.let {
+            it.stopListening()
+            it.cancel()
+            it.destroy()
+        }
+        speechRecognizer = null
+    }
+
+
+    private fun runModel(text: String) {
+        val fakeInput = generateDummyMFCC() // Temporary placeholder
+        val inputShape = tflite.getInputTensor(0).shape() // [1, 930, 13]
+        val inputBuffer = ByteBuffer.allocateDirect(4 * inputShape[1] * inputShape[2])
+        inputBuffer.order(ByteOrder.nativeOrder())
+
+        for (row in 0 until inputShape[1]) {
+            for (col in 0 until inputShape[2]) {
+                inputBuffer.putFloat(fakeInput[row][col])
+            }
+        }
+        inputBuffer.rewind()
+
+        val outputBuffer = ByteBuffer.allocateDirect(4 * labels.size)
+        outputBuffer.order(ByteOrder.nativeOrder())
+        tflite.run(inputBuffer, outputBuffer)
+        outputBuffer.rewind()
+
+        val scores = FloatArray(labels.size) { outputBuffer.float }
+        val maxIdx = scores.indices.maxByOrNull { scores[it] } ?: -1
+        val predictedLabel = labels.getOrNull(maxIdx) ?: "Unknown"
+        Toast.makeText(this, "Prediksi: $predictedLabel", Toast.LENGTH_LONG).show()
+//        handleCommand(predictedLabel)
+    }
+
+    private fun loadModelFile(filename: String): ByteBuffer {
+        try {
+            val assetFileDescriptor = assets.openFd(filename)
+            val inputStream = assetFileDescriptor.createInputStream()
+            val fileChannel = inputStream.channel
+            val startOffset = assetFileDescriptor.startOffset
+            val declaredLength = assetFileDescriptor.declaredLength
+            return fileChannel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to load model: ${e.message}", Toast.LENGTH_LONG).show()
+            Log.e("TensorFlowLite", "Model loading error", e)
+            throw e // Or handle gracefully
+        }
+    }
+
+    private fun generateDummyMFCC(): Array<FloatArray> {
+        val mfcc = Array(930) { FloatArray(13) }
+        for (i in 0 until 930) {
+            for (j in 0 until 13) {
+                mfcc[i][j] = (Math.random() * 0.1).toFloat()
+            }
+        }
+        return mfcc
     }
 
     private fun showGuide() {
@@ -92,9 +322,6 @@ class MainActivity : AppCompatActivity() {
             GuideActivity().show(supportFragmentManager, GuideActivity.TAG)
         }
     }
-
-
-
 
     private fun checkMultiplePermission(): Boolean {
         val listPermissionNeeded = arrayListOf<String>()

@@ -72,5 +72,19 @@
         android:src="@drawable/narro"
         android:scaleType="fitCenter" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_speech"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="120dp"
+        android:contentDescription="Speech Input"
+        android:src="@drawable/baseline_mic_24"
+        app:tint="@color/black"
+        android:backgroundTint="@color/white" />
+
+
 
 </RelativeLayout>

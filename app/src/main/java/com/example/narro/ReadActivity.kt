@@ -53,14 +53,6 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         btnPlay.setOnClickListener { toggleSpeech() }
         btnReplay.setOnClickListener { replaySpeech() }
-//        btnBack.setOnClickListener {
-//            Handler(Looper.getMainLooper()).postDelayed({
-//                ttsHelper.speak("kembali ke halaman baca")
-//            }, 2000)
-//            deleteImage()
-//            tts?.stop()
-//            finish()
-//        }
 
         btnBack.setOnClickListener {
             deleteImage()
