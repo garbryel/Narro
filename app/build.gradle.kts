@@ -65,20 +65,22 @@ dependencies {
     // ML Kit
     implementation ("com.google.mlkit:text-recognition:16.0.1")
 
-    // TensorFlow Lite
-    implementation("org.tensorflow:tensorflow-lite:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1")
+//    // TensorFlow Lite
+//    implementation("org.tensorflow:tensorflow-lite:2.16.1")
+//    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1")
+//
+//    // Exclude litert to avoid conflicts
+//    configurations.all {
+//        resolutionStrategy {
+//            exclude(group = "com.google.ai.edge.litert")
+//        }
+//    }
+//
+//    // MFCC
+//    implementation("be.tarsos.dsp:core:2.5")
 
-
-    // Exclude litert to avoid conflicts
-    configurations.all {
-        resolutionStrategy {
-            exclude(group = "com.google.ai.edge.litert")
-        }
-    }
-
-    // MFCC
-    implementation("be.tarsos.dsp:core:2.5")
+    // For API
+    implementation ("com.squareup.okhttp3:okhttp:4.12.0")
 
 
 
