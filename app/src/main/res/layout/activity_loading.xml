@@ -10,7 +10,7 @@
         android:id="@+id/logoIcon"
         android:layout_width="93dp"
         android:layout_height="125dp"
-        android:src="@drawable/narro"
+        android:src="@drawable/logo"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/appName"
         app:layout_constraintEnd_toEndOf="parent"

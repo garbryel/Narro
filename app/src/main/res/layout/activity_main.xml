@@ -12,17 +12,16 @@
         android:layout_height="match_parent"
         android:layout_centerInParent="true" />
 
-    <ImageButton
-        android:id="@+id/captureIB"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="30dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:scaleType="centerCrop"
-        android:src="@drawable/camera"
-        app:tint="@color/white" />
+    <ImageView
+        android:id="@+id/logoNarro"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_toEndOf="@id/appInfo"
+        android:layout_marginStart="8dp"
+        android:layout_alignTop="@id/appInfo"
+        android:layout_alignBottom="@id/appInfo"
+        android:src="@drawable/logo"
+        android:scaleType="fitCenter" />
 
     <ImageButton
         android:id="@+id/flashToggleIB"
@@ -61,30 +60,32 @@
         android:src="@drawable/baseline_info_24"
         app:tint="@color/white" />
 
-    <ImageView
-        android:id="@+id/logoNarro"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_toEndOf="@id/appInfo"
-        android:layout_marginStart="8dp"
-        android:layout_alignTop="@id/appInfo"
-        android:layout_alignBottom="@id/appInfo"
-        android:src="@drawable/narro"
-        android:scaleType="fitCenter" />
+
+    <ImageButton
+        android:id="@+id/captureIB"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="100dp"
+        android:layout_marginBottom="30dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:scaleType="centerCrop"
+        android:src="@drawable/camera"
+        app:tint="@color/white" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_speech"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="120dp"
+        android:layout_marginEnd="80dp"
+        android:layout_marginBottom="30dp"
         android:contentDescription="Speech Input"
         android:src="@drawable/baseline_mic_24"
-        app:tint="@color/black"
-        android:backgroundTint="@color/white" />
-
+        app:tint="@color/white"
+        android:backgroundTint="@color/blue" />
 
 
 </RelativeLayout>

@@ -34,7 +34,7 @@ class SpeechRecognizer(
     private val SAMPLE_RATE = 16000
     private val BUFFER_SIZE = 2048
     private val audioBuffer = mutableListOf<Short>()
-    private val API_URL = "http://192.168.1.5:8000/predict"
+    private val API_URL = "http://192.168.151.252:8000/predict"
 
     fun startRecording() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {

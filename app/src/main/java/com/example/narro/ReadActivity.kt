@@ -187,7 +187,7 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onStart(utteranceId: String?) {}
             override fun onDone(utteranceId: String?) {
                 runOnUiThread {
-                    binding.btnPlay.setImageResource(R.drawable.baseline_play_circle_24)
+                    binding.btnPlay.setImageResource(R.drawable.baseline_play_arrow_24)
                     isSpeaking = false
                     lastCharIndex = 0
                     if (utteranceId == "BACK_UTTERANCE") {
@@ -206,12 +206,12 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (textToRead.isNotEmpty()) {
             if (isSpeaking) {
                 tts?.stop()
-                binding.btnPlay.setImageResource(R.drawable.baseline_play_circle_24)
+                binding.btnPlay.setImageResource(R.drawable.baseline_play_arrow_24)
                 isSpeaking = false
             } else {
                 val remainingText = textToRead.substring(lastCharIndex)
                 tts?.speak(remainingText, TextToSpeech.QUEUE_FLUSH, null, "UTTERANCE_ID")
-                binding.btnPlay.setImageResource(R.drawable.baseline_pause_circle_24)
+                binding.btnPlay.setImageResource(R.drawable.baseline_pause_24)
                 isSpeaking = true
             }
         }
@@ -222,7 +222,7 @@ class ReadActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tts?.stop()
             lastCharIndex = 0
             tts?.speak(textToRead, TextToSpeech.QUEUE_FLUSH, null, "UTTERANCE_ID")
-            binding.btnPlay.setImageResource(R.drawable.baseline_pause_circle_24)
+            binding.btnPlay.setImageResource(R.drawable.baseline_pause_24)
             isSpeaking = true
         }
     }
